@@ -14,6 +14,44 @@ struct Player {
     y: i32,
     velocity: f32,
 }
+struct Obstacle {
+    x: i32,
+    gap_y: i32,
+    size: i32,
+    velocity: f32,
+}
+
+impl Obstacle {
+    fn new(x: i32, score: i32) -> Self {
+        let mut random = RandomNumberGenerator::new();
+        Obstacle {
+            x,
+            gap_y: random.range(10, 40),
+            size: i32::max(2, 20 - score),
+            velocity: 0.0,
+        }
+    }
+
+    fn render(&mut self, ctx: &mut BTerm, player_x: i32) {
+        let screen_x = self.x - player_x;
+        let half_size = self.size / 2;
+
+        for y in 0..self.gap_y - half_size {
+            ctx.set(screen_x, y, RED, BLACK, to_cp437('|'))
+        }
+
+        for y in self.gap_y + half_size..SCREEN_HEIGHT {
+            ctx.set(screen_x, y, RED, BLACK, to_cp437('|'))
+        }
+    }
+    fn hit_obstacle(&mut self, player: &Player) {
+        let half_size = self.size / 2;
+        let does_x_match = player.x == self.x;
+        let player_above_gap = player.y < self.gap_y - half_size;
+        let player_below_gap = player.y > self.gap_y + half_size;
+        does_x_match && (player_above_gap || player_below_gap);
+    }
+}
 
 impl Player {
     fn new(x: i32, y: i32) -> Self {
@@ -50,6 +88,8 @@ struct State {
     player: Player,
     frame_time: f32,
     mode: GameMode,
+    obstacle: Obstacle,
+    score: i32,
 }
 
 impl State {
@@ -58,6 +98,8 @@ impl State {
             player: Player::new(5, 25),
             frame_time: 0.0,
             mode: GameMode::Menu,
+            obstacle: Obstacle::new(SCREEN_WIDTH, 0),
+            score: 0,
         }
     }
     fn play(&mut self, ctx: &mut BTerm) {
@@ -70,17 +112,24 @@ impl State {
             self.player.gravity_and_move()
         }
         if let Some(key) = ctx.key {
-          match key {
-              VirtualKeyCode::Space | VirtualKeyCode::Up => self.player.flap(),
-              _ => {}
+            match key {
+                VirtualKeyCode::Space | VirtualKeyCode::Up => self.player.flap(),
+                _ => {}
             }
         }
 
         self.player.render(ctx);
         ctx.print_centered(0, "Press SPACE to flap");
+        ctx.print_centered(0, &format!("Score: {}", self.score));
+        self.obstacle.render(ctx, self.player.x);
+
+        if self.obstacle.x < self.player.x {
+            self.score += 1;
+            self.obstacle = Obstacle::new(self.player.x + SCREEN_WIDTH, self.score);
+        }
 
         if self.player.y > SCREEN_HEIGHT {
-          self.mode = GameMode::End
+            self.mode = GameMode::End
         }
     }
     fn dead(&mut self, ctx: &mut BTerm) {
