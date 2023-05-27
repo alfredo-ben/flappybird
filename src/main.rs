@@ -69,10 +69,11 @@ impl State {
 
             self.player.gravity_and_move()
         }
-        if let Some(VirtualKeyCode::Space) = ctx.key {
-          self.player.flap();
-        } else if let Some(VirtualKeyCode::Up) = ctx.key {
-            self.player.flap();
+        if let Some(key) = ctx.key {
+          match key {
+              VirtualKeyCode::Space | VirtualKeyCode::Up => self.player.flap(),
+              _ => {}
+            }
         }
 
         self.player.render(ctx);
