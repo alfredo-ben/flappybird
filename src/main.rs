@@ -71,6 +71,8 @@ impl State {
         }
         if let Some(VirtualKeyCode::Space) = ctx.key {
           self.player.flap();
+        } else if let Some(VirtualKeyCode::Up) = ctx.key {
+            self.player.flap();
         }
 
         self.player.render(ctx);
