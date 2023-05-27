@@ -19,7 +19,7 @@ To get started with Flappy Bird, follow these steps:
    git clone https://github.com/your-username/flappy-bird-rust.git
    cd flappy-bird-rust
    cargo run
-  ```
+   ```
 
 ## Game controls
 
