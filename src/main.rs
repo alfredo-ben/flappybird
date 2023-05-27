@@ -44,12 +44,12 @@ impl Obstacle {
             ctx.set(screen_x, y, RED, BLACK, to_cp437('|'))
         }
     }
-    fn hit_obstacle(&mut self, player: &Player) {
+    fn hit_obstacle(&mut self, player: &Player) -> bool {
         let half_size = self.size / 2;
         let does_x_match = player.x == self.x;
-        let player_above_gap = player.y < self.gap_y - half_size;
-        let player_below_gap = player.y > self.gap_y + half_size;
-        does_x_match && (player_above_gap || player_below_gap);
+        let player_above_gap = player.y <= self.gap_y - half_size;
+        let player_below_gap = player.y >= self.gap_y + half_size;
+        does_x_match && (player_above_gap || player_below_gap)
     }
 }
 
@@ -76,7 +76,7 @@ impl Player {
         }
 
         self.y += self.velocity as i32;
-        self.x += 1;
+        self.x += 4;
 
         if self.y < 0 {
             self.y = 0;
@@ -120,7 +120,7 @@ impl State {
 
         self.player.render(ctx);
         ctx.print_centered(0, "Press SPACE to flap");
-        ctx.print_centered(0, &format!("Score: {}", self.score));
+        ctx.print_centered(1, &format!("Score: {}", self.score));
         self.obstacle.render(ctx, self.player.x);
 
         if self.obstacle.x < self.player.x {
@@ -128,13 +128,14 @@ impl State {
             self.obstacle = Obstacle::new(self.player.x + SCREEN_WIDTH, self.score);
         }
 
-        if self.player.y > SCREEN_HEIGHT {
+        if self.player.y > SCREEN_HEIGHT || self.obstacle.hit_obstacle(&self.player) {
             self.mode = GameMode::End
         }
     }
     fn dead(&mut self, ctx: &mut BTerm) {
         ctx.cls();
-        ctx.print_centered(5, "You're Dead");
+        ctx.print_centered(4, "You're Dead");
+        ctx.print_centered(5, &format!("You scored {} points", self.score));
         ctx.print_centered(8, "(P) Play Game");
         ctx.print_centered(9, "(Q) Quit Game");
 
@@ -164,6 +165,8 @@ impl State {
         self.player = Player::new(5, 25);
         self.frame_time = 0.0;
         self.mode = GameMode::Playing;
+        self.score = 0;
+        self.obstacle = Obstacle::new(SCREEN_WIDTH, 0)
     }
 }
 
